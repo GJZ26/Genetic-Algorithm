@@ -1,5 +1,4 @@
 from views.main_ui import *
-from views.dialog_ui import *
 import random
 from ag import Genetic
 
@@ -18,13 +17,6 @@ equation = [
     "log(2*x) + x**2 - 3",
     "tan(2*x) - cos(x) + x",
 ]
-
-
-class DialogResult(QtWidgets.QDialog, Ui_Results):
-    def __init__(self, *args, **kwargs):
-        QtWidgets.QDialog.__init__(self, *args, **kwargs)
-        self.setupUi(self)
-
 
 class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
