@@ -50,7 +50,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             self.initial_resolution.text(),
             self.prob_mut_ind.text(),
             self.prob_mut_gen.text(),
-            self.prob_cruza.text()
+            self.prob_cruza.text(),
+            self.keep_edge.isChecked()
         )
         if not self.local_ag.start_initials_calculations():
             return "Error: No se pudo realizar los cálculos iniciales. Abortando."

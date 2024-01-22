@@ -367,6 +367,9 @@ class Ui_MainWindow(object):
         self.prob_cruza.setSingleStep(0.01)
         self.prob_cruza.setProperty("value", 0.5)
         self.prob_cruza.setObjectName("prob_cruza")
+        self.keep_edge = QtWidgets.QCheckBox(self.centralwidget)
+        self.keep_edge.setGeometry(QtCore.QRect(260, 220, 161, 20))
+        self.keep_edge.setObjectName("keep_edge")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -414,6 +417,7 @@ class Ui_MainWindow(object):
         self.label_24.setText(_translate("MainWindow", "Probabilidad de mutación (individuo)"))
         self.label_25.setText(_translate("MainWindow", "Probabilidad de mutación (gen)"))
         self.label_26.setText(_translate("MainWindow", "Probabilidad de cruza"))
+        self.keep_edge.setText(_translate("MainWindow", "Conservar extremos"))
 
 
 if __name__ == "__main__":

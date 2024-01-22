@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import imageio
 
+
 class Genetic:
     def __init__(self) -> None:
         self.current_population = []
@@ -21,6 +22,9 @@ class Genetic:
         self.best_avarage = []
         self.worst_avarage = []
         self.avarage = []
+        self.best = ''
+        self.worst = ''
+        self.preserve_edges = True
 
     def register_visual_output(self, logs: QLabel = None, calculated_range_label: QLabel = None,
                                jumps_label: QLabel = None, poits_label: QLabel = None,
@@ -32,7 +36,7 @@ class Genetic:
     def load_data(self, equation: str, is_for_maximum: bool, range_x1: float, range_x2: float,
                   max_population_size: int, initial_population_size: int, generations_number: int,
                   initial_resolution: float, mutation_probability: float, gen_mutation_probability: float,
-                  cross_probability: float):
+                  cross_probability: float, preserve_edges:bool):
         self.equation = self.prepare_equation(equation)
         self.is_for_maximun = bool(is_for_maximum)
         self.range_x1, self.range_x2 = int(range_x1), int(range_x2)
@@ -42,6 +46,7 @@ class Genetic:
             generations_number), Decimal(initial_resolution)
         self.mutation_probability, self.gen_mutation_probability, self.cross_probability = float(
             mutation_probability), float(gen_mutation_probability), float(cross_probability)
+        self.preserve_edges = bool(preserve_edges)
 
     def prepare_equation(self, equation):
         return equation.replace('sin', 'math.sin').replace('tan', 'math.tan').replace('cos', 'math.cos') \
@@ -65,6 +70,8 @@ class Genetic:
 
     def keep_random_individuals(self, classes, limit):
         result = []
+        if (self.preserve_edges):
+            limit = limit - 2
         for _, items in classes.items():
             if len(result) < limit:
                 selected_items = random.sample(
@@ -81,19 +88,19 @@ class Genetic:
 
     def render_video(self):
 
-        self.say_to_world("Generando video.")
         video_name = 'evolution.mp4'
-        images_file = sorted(
-            [f for f in os.listdir('frames')if f.endswith('.png')])
+        images_file = os.listdir('frames')
         images = []
 
+        self.say_to_world("Generando video...")
+        
         for image_file in images_file:
             image_path = os.path.join('frames', image_file)
             images.append(imageio.imread(image_path))
 
         output_path = video_name
         imageio.mimsave(output_path, images, fps=10)
-        self.say_to_world("Video guardado.")
+        self.say_to_world("¡Video guardado!")
 
     def start_initials_calculations(self):
         if not self.equation:
@@ -107,6 +114,8 @@ class Genetic:
         self.delta_resolution = round(
             Decimal((self.range / ((2**self.bit_size)-1))), 3)
         self.display_initials_calculus()
+        self.best = None
+        self.worst = None
         return True
 
     def display_initials_calculus(self):
@@ -129,16 +138,18 @@ class Genetic:
 
     def show_avarage(self):
         x_value = list(range(1, self.generations_number + 1))
-        
-        plt.plot(x_value, self.best_avarage, label="Best", color='#0CFF00', marker='o')
-        plt.plot(x_value, self.worst_avarage, label="Worst", color='#D81D1D', marker='s')
-        plt.plot(x_value, self.avarage, label="Avarage", color='#7EB3FF', marker='^')
-        
+        plt.plot(x_value, self.best_avarage, label="Best",
+                 color='#0CFF00', marker='o')
+        plt.plot(x_value, self.worst_avarage,
+                 label="Worst", color='#D81D1D', marker='s')
+        plt.plot(x_value, self.avarage, label="Avarage",
+                 color='#7EB3FF', marker='^')
+
         plt.title("Historial")
         plt.xlabel("Generación")
         plt.ylabel("Resultado")
         plt.legend()
-        
+        self.say_to_world("Generando gráfica histórica...")
         plt.show()
 
     def invoke_first_population(self):
@@ -183,9 +194,31 @@ class Genetic:
 
         self.best_avarage.append(self.current_population['record'][best][3])
         self.worst_avarage.append(self.current_population['record'][worst][3])
+
+        if (self.preserve_edges):
+            self.preserve_best_and_worst(
+                self.current_population['record'][best][0], self.current_population['record'][worst][0])
+
         self.avarage.append(avarage / len(self.individuals))
 
         return result
+
+    def preserve_best_and_worst(self, new_best, new_worst):
+        if self.best is None and self.worst is None:
+            self.worst = new_worst
+            self.best = new_best
+            return
+        current_best_in_decimal = self.binary_to_decimal(self.best)
+        new_best_in_decimal = self.binary_to_decimal(new_best)
+
+        current_worst_in_decimal = self.binary_to_decimal(self.worst)
+        new_worst_in_decimal = self.binary_to_decimal(new_worst)
+
+        self.best = new_best if new_best_in_decimal > current_best_in_decimal and self.is_for_maximun else self.best
+        self.best = new_best if new_best_in_decimal < current_best_in_decimal and not self.is_for_maximun else self.best
+
+        self.worst = new_worst if new_worst_in_decimal < current_worst_in_decimal and self.is_for_maximun else self.worst
+        self.worst = new_worst if new_worst_in_decimal > current_worst_in_decimal and self.is_for_maximun else self.worst
 
     def calculate_fx_value(self, x_valued):
         try:
@@ -200,6 +233,9 @@ class Genetic:
         else:
             self.individuals = [subarreglo[0]
                                 for subarreglo in self.current_population['record']]
+            if self.preserve_edges:
+                self.individuals.append(self.best)
+                self.individuals.append(self.worst)
             self.matching()
         self.calculate_gen_data()
         self.render_frame(self.current_population, generation)
@@ -312,6 +348,4 @@ class Genetic:
         print(f'{current_step} / {target_step}')
         print(f'Total population: {len(self.current_population["record"])}')
         progress_percentage = int((current_step / target_step) * 100)
-        if progress_percentage == 100:
-            self.say_to_world("¡Hecho!")
         self.progress_bar.setValue(progress_percentage)
